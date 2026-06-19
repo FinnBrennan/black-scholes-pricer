@@ -1,3 +1,24 @@
+------------------------
+
+Current Project State: 
+
+------------------------
+
+- Call and Put option price calculator based on user input.
+- 5 Graphs for each single variable change comparison; with bound adjustability.
+- Simple Streamlit UI with dropdown boxes for graphs.
+
+
+
+
+
+
+------------------------
+
+Development Progress:
+
+------------------------
+
 Version 1 (First Commit) 
 - Simple black-scholes pricer python model. Simple formula with a simple streamlit UI layer. 
 
@@ -17,3 +38,25 @@ Version 2 (Second Commit)
 
 - streamlit config.toml for basic colour scheming.
 
+
+
+Version 3 (Third Commit)
+
+- Added the remaining 3 single x-variable graphs.
+- Added lower and upper bound control.
+- Updated styling -> put the graphs into dropdown menu so user can select only the graphs they actually want.
+
+
+
+Version 4 (Upcoming) 
+
+- Error and Bound handling
+- Code cleanup (Line Length, Comments
+- Persistent State
+- Sliders
+
+
+
+Version 5 (Upcoming) 
+
+- Heatmap (Call & Put price across Stock Price vs Volatility grid)
