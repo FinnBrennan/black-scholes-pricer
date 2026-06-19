@@ -6,12 +6,9 @@ Current Project State:
 
 - Call and Put option price calculator based on user input.
 - 5 Graphs for each single variable change comparison; with bound adjustability.
-- Simple Streamlit UI with dropdown boxes for graphs.
-
-
-
-
-
+- Simple & Clean Streamlit UI with dropdown boxes for graphs.
+- Sliders for bound values
+- Persistent State -> allows for live adjustment to displayed graphs according to bound changes.
 
 ------------------------
 
@@ -48,13 +45,12 @@ Version 3 (Third Commit)
 
 
 
-Version 4 (Upcoming) 
+Version 4 (Fourth Commit) 
 
-- Error and Bound handling
-- Code cleanup (Line Length, Comments
-- Persistent State
-- Sliders
-
+- Error + Bound handling & Input Validation
+- Cleaned up codebase formatting (Line Length, Comments, Structure)
+- Persistent State for live graph adjustments based on bound sliders
+- Added Bound Sliders to allow for real time updating.
 
 
 Version 5 (Upcoming) 
