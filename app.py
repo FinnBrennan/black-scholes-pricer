@@ -7,6 +7,10 @@ from pricer import black_scholes
 from charts import call_put_stock_chart
 from charts import call_put_vol_chart
 from charts import options_vs_xaxis
+from charts import call_put_strike_chart
+from charts import call_put_time_chart
+from charts import call_put_rate_chart
+
 
 
 # CSS for call price display (Green box)
@@ -59,12 +63,12 @@ with st.sidebar:
     q = setdefault0 = st.caption("Default q = 0  [dividend yield % per year ]")
 
 
-    # #temporary for ease of testing
-    # curr_stk_prc = 170
-    # strike_pr = 155
-    # time_unt_exp = 0.5
-    # rsk_free_ir = 0.05
-    # sigma_vol = 0.25
+    #temporary for ease of testing
+    curr_stk_prc = 150
+    strike_pr = 155
+    time_unt_exp = 0.5
+    rsk_free_ir = 0.05
+    sigma_vol = 0.25
 
 
 
@@ -139,20 +143,26 @@ with st.sidebar:
 # On calculate button - display graphs
 if calculate:
 
+    st.subheader("Option Price VS Single x-Variable Graphs")
 
 
-    # TODO Update to user input later/slider
+    col1,col2,col3 =st.columns(3)
+    with col1:
+        low_multi = st.number_input("Lower Bound", value=0.75, help="e.g. 0.75 = 25% below current value")
 
-    low_multi = 0.75
-    high_multi = 1.25
-    user_datapoints = 20
+    with col2:
+        high_multi =st.number_input("Upper Bound", value=1.25, help="e.g. 1.25 = 25% above current value")
+
+    with col3:
+        user_datapoints = st.number_input("# of Datapoints", value=25, help="More points = smoother curves")
+
+
 
 
     # Chart 1 (Call, Put vs Stock)
     #=============================
     (x_datapoints, important_x) = call_put_stock_chart(low_multi, high_multi, user_datapoints, curr_stk_prc)
     
-
     # call main function for C%P vs x_variable line graphs.
     c_p_s_chart=options_vs_xaxis(x_datapoints,important_x,low_multi,
                     curr_stk_prc,strike_pr, time_unt_exp, 
@@ -164,7 +174,6 @@ if calculate:
     #==================================
     (x_datapoints, important_x) = call_put_vol_chart(low_multi, high_multi, user_datapoints, sigma_vol)
     
-
     # call main function for C%P vs x_variable line graphs.
     c_p_v_chart =  options_vs_xaxis(x_datapoints,important_x,low_multi,
                     curr_stk_prc,strike_pr, time_unt_exp, 
@@ -172,12 +181,56 @@ if calculate:
 
 
 
-    col1, col2 = st.columns(2)
-    with col1:
-        st.pyplot(c_p_s_chart)
+    # Chart 3 (Call, Put vs Strike)
+    #==================================
+    (x_datapoints, important_x) = call_put_strike_chart(low_multi, high_multi, user_datapoints, strike_pr)
         
-    with col2:
+    # call main function for C%P vs x_variable line graphs.
+    c_p_strike_chart =  options_vs_xaxis(x_datapoints,important_x,low_multi,
+                        curr_stk_prc,strike_pr, time_unt_exp, 
+                        rsk_free_ir, sigma_vol, call_p, put_p, mode="strike", x_label = "Strike Price $", title = "Strike Price")
+
+
+
+    # Chart 4 (Call, Put vs Time)
+    #==================================
+    (x_datapoints, important_x) = call_put_strike_chart(low_multi, high_multi, user_datapoints, time_unt_exp)
+        
+    # call main function for C%P vs x_variable line graphs.
+    c_p_t_chart =  options_vs_xaxis(x_datapoints,important_x,low_multi,
+                        curr_stk_prc,strike_pr, time_unt_exp, 
+                        rsk_free_ir, sigma_vol, call_p, put_p, mode="time", x_label = "Time Until Expiry [years]", title = "Time Until Expiry")
+
+
+
+    # Chart 5 (Call, Put vs Rate)
+    #==================================
+    (x_datapoints, important_x) = call_put_strike_chart(low_multi, high_multi, user_datapoints, time_unt_exp)
+        
+
+    # call main function for C%P vs x_variable line graphs.
+    c_p_r_chart =  options_vs_xaxis(x_datapoints,important_x,low_multi,
+                        curr_stk_prc,strike_pr, time_unt_exp, 
+                        rsk_free_ir, sigma_vol, call_p, put_p, mode="rate", x_label = "Risk Free Interest Rate [0.5 = 50%]", title = "Interest Rate")
+
+
+    with st.expander("Stock Price"):
+        st.pyplot(c_p_s_chart)
+    with st.expander("Volatility"):
         st.pyplot(c_p_v_chart)
+    with st.expander("Strike Price"):
+        st.pyplot(c_p_strike_chart)
+    with st.expander("Time Until Expiry"):
+        st.pyplot(c_p_t_chart)
+    with st.expander("Interest Rate"):
+        st.pyplot(c_p_r_chart)
+
+    
+
+
+
+
+
     
 
 
@@ -190,20 +243,25 @@ if calculate:
 #
 #==============================================================================
     
-# V1= python terminal s
+
+# V1= python terminal 
 # - Done
 #=============================
 
 
-# V2= streamlit for frontend
+# V2 = Streamlit for frontend + 2 graphs
 # -mvp complete 
 # -colour scheme implemented 
 # -both options prices to x_variable graphs implemented
 #=============================
 
+
+# V3 = Complete all 5 single variable graphs + Sliders.
+
+
 # To Come:
 
-# V3 = react front end. 
+# React front end. 
 
 
 

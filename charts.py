@@ -18,9 +18,20 @@ def options_vs_xaxis(x_datapoints,important_x,low_multi,curr_stk_prc,
         if mode == "stock":
             prices = black_scholes(x, strike_pr, time_unt_exp, 
                     rsk_free_ir, sigma_vol)
-        else:
+        elif mode == "vol":
             prices = black_scholes(curr_stk_prc, strike_pr, time_unt_exp, 
                     rsk_free_ir, x)
+        elif mode == "strike":
+            prices = black_scholes(curr_stk_prc, x, time_unt_exp, 
+                    rsk_free_ir, sigma_vol)
+        elif mode == "time":
+            prices = black_scholes(curr_stk_prc, strike_pr, x, 
+                    rsk_free_ir, sigma_vol)
+        elif mode == "rate":
+            prices = black_scholes(curr_stk_prc, strike_pr, time_unt_exp, 
+                    x, sigma_vol)
+
+
             
 
         call_price_datapoints.append(prices[0])
@@ -63,12 +74,11 @@ def options_vs_xaxis(x_datapoints,important_x,low_multi,curr_stk_prc,
 
     x_offset = (x_datapoints[-1] - x_datapoints[0]) * 0.05
 
-    ax.set_yticks(list(ax.get_yticks()) + [call_p, put_p])
     ax.annotate(f'Call: ${call_p:.2f}', xy=(important_x, call_p), xytext=(important_x + x_offset, call_p + 1), color='black')
     ax.annotate(f'Put: ${put_p:.2f}', xy=(important_x, put_p), xytext=(important_x + x_offset, put_p - 2), color='black')
 
     ax.set_xlim(x_datapoints[0], x_datapoints[-1])
-    
+
     # Display the legend to differentiate lines
     ax.legend(loc='upper left')
 
@@ -95,20 +105,43 @@ def call_put_stock_chart(low_multi, high_multi, user_datapoints, curr_stk_prc):
                             curr_stk_prc),user_datapoints)
     
     important_x = curr_stk_prc
-    
     return (stock_price_datapoints,important_x)
-
-
-
 
 
 def call_put_vol_chart(low_multi, high_multi, user_datapoints, sigma_vol):
 
-    
     vol_price_datapoints  = np.linspace((low_multi*sigma_vol),(high_multi*
                             sigma_vol),user_datapoints)
     
     important_x = sigma_vol
-
     return (vol_price_datapoints,important_x)
+
+
+def call_put_strike_chart(low_multi, high_multi, user_datapoints, strike_pr):
+
+    strike_price_datapoints  = np.linspace((low_multi*strike_pr),(high_multi*
+                            strike_pr),user_datapoints)
+    
+    important_x = strike_pr
+    return (strike_price_datapoints,important_x)
+
+
+def call_put_time_chart(low_multi, high_multi, user_datapoints, time_unt_exp):
+
+    time_price_datapoints  = np.linspace((low_multi*time_unt_exp),(high_multi*
+                            time_unt_exp),user_datapoints)
+    
+    important_x = time_unt_exp
+    return (time_price_datapoints,important_x)
+
+
+def call_put_rate_chart(low_multi, high_multi, user_datapoints, rsk_free_ir):
+
+    rate_price_datapoints  = np.linspace((low_multi*rsk_free_ir),(high_multi*
+                            rsk_free_ir),user_datapoints)
+    
+    important_x = rsk_free_ir
+    return (rate_price_datapoints,important_x)
+
+
     
