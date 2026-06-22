@@ -4,12 +4,8 @@ import numpy as np
 from scipy.stats import norm
 
 from pricer import black_scholes
-from charts import call_put_stock_chart
-from charts import call_put_vol_chart
 from charts import options_vs_xaxis
-from charts import call_put_strike_chart
-from charts import call_put_time_chart
-from charts import call_put_rate_chart
+from charts import datapoints
 
 # Wide screen streamlit:
 st.set_page_config(layout="wide")
@@ -60,28 +56,23 @@ st.title(" Black Scholes Pricer ")
 # =============================================================================
 with st.sidebar:
 
-    # Input Validation Rules:
-    # Stock Price > 0
-    # Strike Price > 0
-    # Time > 0
-    # Interest Rate > 0
-    # Volatility > 0
+    # Take user inputs
+
+    # Toggle for percentage or decimal inputs: default = decimal.
+    use_percentage = st.toggle("Input as percentage", value=False)
 
     curr_stk_prc = input_1 = st.number_input("Current Stock Price [ $ ]")
     strike_pr = input_2 = st.number_input("Strike Price [ $ ]")
     time_unt_exp = input_3 = st.number_input("Time Until Expiry [ years ]")
-    rsk_free_ir = input_4 = st.number_input(
-        "Risk Free Interest Rate" " [ e.g. 0.05 = 5% ]"
-    )
-    sigma_vol = input_5 = st.number_input("Volatility [ e.g. 0.05 = 5% ]" " ")
+    rsk_free_ir = input_4 = st.number_input("Risk Free Interest Rate" " [ 0.05 or 5% ]")
+    sigma_vol = input_5 = st.number_input("Volatility [ 0.05 or 5% ]")
+
+    # Take q as 0 for now - may update later.
     q = setdefault0 = st.caption("Default q = 0  [dividend yield % per year ]")
 
-    # temporary for ease of testing
-    # curr_stk_prc = 150
-    # strike_pr = 155
-    # time_unt_exp = 0.5
-    # rsk_free_ir = 0.05
-    # sigma_vol = 0.25
+    # If user selects percentage inputs, convert value to decimal format.
+    rsk_free_ir = rsk_free_ir / 100 if use_percentage else rsk_free_ir
+    sigma_vol = sigma_vol / 100 if use_percentage else sigma_vol
 
     st.markdown(
         """
@@ -208,7 +199,7 @@ if st.session_state.calculated:
 
     # Chart 1 (Call, Put vs Stock)
     # =============================
-    x_datapoints, important_x = call_put_stock_chart(
+    x_datapoints, important_x = datapoints(
         low_multi, high_multi, user_datapoints, curr_stk_prc
     )
 
@@ -231,7 +222,7 @@ if st.session_state.calculated:
 
     # Chart 2 (Call, Put vs Volatility)
     # ==================================
-    x_datapoints, important_x = call_put_vol_chart(
+    x_datapoints, important_x = datapoints(
         low_multi, high_multi, user_datapoints, sigma_vol
     )
 
@@ -254,7 +245,7 @@ if st.session_state.calculated:
 
     # Chart 3 (Call, Put vs Strike)
     # ==================================
-    x_datapoints, important_x = call_put_strike_chart(
+    x_datapoints, important_x = datapoints(
         low_multi, high_multi, user_datapoints, strike_pr
     )
 
@@ -277,7 +268,7 @@ if st.session_state.calculated:
 
     # Chart 4 (Call, Put vs Time)
     # ==================================
-    x_datapoints, important_x = call_put_time_chart(
+    x_datapoints, important_x = datapoints(
         low_multi, high_multi, user_datapoints, time_unt_exp
     )
 
@@ -300,7 +291,7 @@ if st.session_state.calculated:
 
     # Chart 5 (Call, Put vs Rate)
     # ==================================
-    x_datapoints, important_x = call_put_rate_chart(
+    x_datapoints, important_x = datapoints(
         low_multi, high_multi, user_datapoints, time_unt_exp
     )
 

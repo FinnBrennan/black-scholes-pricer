@@ -118,51 +118,15 @@ def options_vs_xaxis(
     return fig
 
 
-def call_put_stock_chart(low_multi, high_multi, user_datapoints, curr_stk_prc):
+# Refactored the various x datapoint array functions into 1.
+# - Was poor original code with extreme redundancy that I did not notice at first.
 
-    stock_price_datapoints = np.linspace(
-        (low_multi * curr_stk_prc), (high_multi * curr_stk_prc), user_datapoints
+
+def datapoints(low_multi, high_multi, user_datapoints, input_variable):
+
+    x_datapoints = np.linspace(
+        (low_multi * input_variable), (high_multi * input_variable), user_datapoints
     )
 
-    important_x = curr_stk_prc
-    return (stock_price_datapoints, important_x)
-
-
-def call_put_vol_chart(low_multi, high_multi, user_datapoints, sigma_vol):
-
-    vol_price_datapoints = np.linspace(
-        (low_multi * sigma_vol), (high_multi * sigma_vol), user_datapoints
-    )
-
-    important_x = sigma_vol
-    return (vol_price_datapoints, important_x)
-
-
-def call_put_strike_chart(low_multi, high_multi, user_datapoints, strike_pr):
-
-    strike_price_datapoints = np.linspace(
-        (low_multi * strike_pr), (high_multi * strike_pr), user_datapoints
-    )
-
-    important_x = strike_pr
-    return (strike_price_datapoints, important_x)
-
-
-def call_put_time_chart(low_multi, high_multi, user_datapoints, time_unt_exp):
-
-    time_price_datapoints = np.linspace(
-        (low_multi * time_unt_exp), (high_multi * time_unt_exp), user_datapoints
-    )
-
-    important_x = time_unt_exp
-    return (time_price_datapoints, important_x)
-
-
-def call_put_rate_chart(low_multi, high_multi, user_datapoints, rsk_free_ir):
-
-    rate_price_datapoints = np.linspace(
-        (low_multi * rsk_free_ir), (high_multi * rsk_free_ir), user_datapoints
-    )
-
-    important_x = rsk_free_ir
-    return (rate_price_datapoints, important_x)
+    important_x = input_variable
+    return (x_datapoints, important_x)
