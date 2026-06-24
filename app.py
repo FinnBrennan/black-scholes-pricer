@@ -6,6 +6,7 @@ from scipy.stats import norm
 from pricer import black_scholes
 from charts import options_vs_xaxis
 from charts import datapoints
+from heatmap import main_heatmap
 
 # Wide screen streamlit:
 st.set_page_config(layout="wide")
@@ -16,7 +17,19 @@ if "calculated" not in st.session_state:
     st.session_state.calculated = False
 
 
-# CSS for call price display (Green box)
+# CSS
+
+st.markdown(
+    """
+    <style>
+    .block-container {
+        padding-top: 1rem;
+    }
+    </style>
+""",
+    unsafe_allow_html=True,
+)
+
 st.markdown(
     """
     <style>
@@ -68,7 +81,8 @@ with st.sidebar:
     sigma_vol = input_5 = st.number_input("Volatility [ 0.05 or 5% ]")
 
     # Take q as 0 for now - may update later.
-    q = setdefault0 = st.caption("Default q = 0  [dividend yield % per year ]")
+    q = 0
+    st.caption("Default q = 0  [dividend yield % per year ]")
 
     # If user selects percentage inputs, convert value to decimal format.
     rsk_free_ir = rsk_free_ir / 100 if use_percentage else rsk_free_ir
@@ -116,7 +130,7 @@ if calculate:
         errors.append("Strike price must be greater than 0")
     if time_unt_exp <= 0:
         errors.append("Time until expiry must be greater than 0")
-    if rsk_free_ir <= 0:
+    if rsk_free_ir < 0:
         errors.append("Risk free interest rate must be greater than 0")
     if sigma_vol <= 0:
         errors.append("Volatility must be greater than 0")
@@ -161,10 +175,8 @@ if st.session_state.calculated:
     # =========================================================================
 
     # On calculate button - display graphs
-
     st.divider()
-
-    st.subheader("Option Price VS Single x-Variable Graphs")
+    st.markdown("**Option Price VS Single x-Variable Graphs**")
     st.divider()
 
     col1, col2 = st.columns([1, 5])
@@ -292,7 +304,7 @@ if st.session_state.calculated:
     # Chart 5 (Call, Put vs Rate)
     # ==================================
     x_datapoints, important_x = datapoints(
-        low_multi, high_multi, user_datapoints, time_unt_exp
+        low_multi, high_multi, user_datapoints, rsk_free_ir
     )
 
     # call main function for C%P vs x_variable line graphs.
@@ -324,6 +336,50 @@ if st.session_state.calculated:
             st.pyplot(c_p_t_chart)
         with st.expander("Interest Rate"):
             st.pyplot(c_p_r_chart)
+
+    # =============================================================================
+    #
+    # Heatmaps
+    #
+    # =============================================================================
+
+    st.divider()
+    st.markdown(
+        "**Heatmaps for Call and Put Prices (against Stock Price and Volatility**"
+    )
+    st.divider()
+
+    stock_price_datapoints, important_x = datapoints(
+        low_multi, high_multi, 10, curr_stk_prc
+    )
+    vol_datapoints, important_x = datapoints(low_multi, high_multi, 10, sigma_vol)
+
+    call_heatmap = main_heatmap(
+        stock_price_datapoints,
+        vol_datapoints,
+        "call",
+        strike_pr,
+        time_unt_exp,
+        rsk_free_ir,
+    )
+
+    put_heatmap = main_heatmap(
+        stock_price_datapoints,
+        vol_datapoints,
+        "put",
+        strike_pr,
+        time_unt_exp,
+        rsk_free_ir,
+    )
+
+    col1, col2 = st.columns(2)
+    with col1:
+
+        with st.expander("Call Heatmap"):
+            st.pyplot(call_heatmap)
+    with col2:
+        with st.expander("Put Heatmap"):
+            st.pyplot(put_heatmap)
 
 
 # =============================================================================
@@ -376,6 +432,9 @@ else:
 # - Error handling and input validation
 # - Bounds now sliders not number input boxes.
 # - Slight styling changes
+
+
+# streaV5  = Percentage toggle for inputs
 
 
 # To Come:
