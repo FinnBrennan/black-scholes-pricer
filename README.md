@@ -1,11 +1,11 @@
 # Black-Scholes Options Pricer
 
-[Live Demo]([https://your-app-url.streamlit.app](https://black-scholes-pricer-v9jj9pjzqhuzzhvvbd9zqn.streamlit.app))
+[Live Demo](https://black-scholes-pricer-v9jj9pjzqhuzzhvvbd9zqn.streamlit.app)
 
 This project is for me to learn how to take financial and mathematical models and translate them into well-structured, programmatic applications. This project so far has specifically challenged me to deeply understand a real-world quantitative finance model (the Black-Scholes options pricing formula), and build an interactive tool around it. Beyond just implementing the formula correctly which is relatively simple programmatically, my focus is on presenting the data in useful, logical, and visually intuitive ways within a clean UI, allowing the user to explore how each variable affects option pricing in real time.
 
-<img width="1464" height="822" alt="image" src="https://github.com/user-attachments/assets/3dc92711-a568-42f4-b2b4-d4bdf7592e4a" />
 <img width="1470" height="820" alt="image" src="https://github.com/user-attachments/assets/06468d08-6c1d-4431-beda-10b103bd3076" />
+<img width="1464" height="822" alt="image" src="https://github.com/user-attachments/assets/3dc92711-a568-42f4-b2b4-d4bdf7592e4a" />
 <img width="1462" height="727" alt="image" src="https://github.com/user-attachments/assets/f6a98bcd-0464-4e47-bfc3-3e9dcbf81c1b" />
 
 
