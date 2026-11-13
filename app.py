@@ -1,11 +1,7 @@
 import streamlit as st
-import pandas as pd
-import numpy as np
-from scipy.stats import norm
-
 from pricer import black_scholes
-from charts import options_vs_xaxis
-from charts import datapoints
+
+from charts import datapoints, options_vs_xaxis
 from heatmap import main_heatmap
 
 # Wide screen streamlit:
@@ -68,7 +64,6 @@ st.title(" Black Scholes Pricer ")
 #
 # =============================================================================
 with st.sidebar:
-
     # Take user inputs
 
     # Toggle for percentage or decimal inputs: default = decimal.
@@ -77,7 +72,7 @@ with st.sidebar:
     curr_stk_prc = input_1 = st.number_input("Current Stock Price [ $ ]")
     strike_pr = input_2 = st.number_input("Strike Price [ $ ]")
     time_unt_exp = input_3 = st.number_input("Time Until Expiry [ years ]")
-    rsk_free_ir = input_4 = st.number_input("Risk Free Interest Rate" " [ 0.05 or 5% ]")
+    rsk_free_ir = input_4 = st.number_input("Risk Free Interest Rate [ 0.05 or 5% ]")
     sigma_vol = input_5 = st.number_input("Volatility [ 0.05 or 5% ]")
 
     # Take q as 0 for now - may update later.
@@ -107,7 +102,6 @@ with st.sidebar:
         reset = st.button("Reset", use_container_width=True)
 
     if reset:
-
         st.session_state.calculated = False
         st.rerun()
 
@@ -157,7 +151,6 @@ if st.session_state.calculated:
     put_p = st.session_state.put_p
 
     with st.sidebar:
-
         with st.container():
             st.markdown(
                 '<div class="custom-block-green"></div>', unsafe_allow_html=True
@@ -325,7 +318,6 @@ if st.session_state.calculated:
     )
 
     with col2:
-
         with st.expander("Stock Price"):
             st.pyplot(c_p_s_chart)
         with st.expander("Volatility"):
@@ -373,13 +365,10 @@ if st.session_state.calculated:
     )
 
     col1, col2 = st.columns(2)
-    with col1:
-
-        with st.expander("Call Heatmap"):
-            st.pyplot(call_heatmap)
-    with col2:
-        with st.expander("Put Heatmap"):
-            st.pyplot(put_heatmap)
+    with col1, st.expander("Call Heatmap"):
+        st.pyplot(call_heatmap)
+    with col2, st.expander("Put Heatmap"):
+        st.pyplot(put_heatmap)
 
 
 # =============================================================================
@@ -396,11 +385,11 @@ else:
             st.markdown(
                 '<div class="custom-block-green"></div>', unsafe_allow_html=True
             )
-            st.metric(label="Call Price", value=f"$")
+            st.metric(label="Call Price", value="$")
 
         with st.container():
             st.markdown('<div class="custom-block-red"></div>', unsafe_allow_html=True)
-            st.metric(label="Put Price", value=f"$")
+            st.metric(label="Put Price", value="$")
 
     st.subheader("Enter 5 valid inputs to calculate options price")
 
