@@ -54,3 +54,22 @@ def bs_price(spot, strike, expiry, rate, vol, div_yield=0.0, option_type="call")
         spot * np.exp(-div_yield * expiry) * norm.cdf(phi * d1)
         - strike * np.exp(-rate * expiry) * norm.cdf(phi * d2)
     )
+
+
+def prob_itm(spot, strike, expiry, rate, vol, div_yield=0.0, option_type="call"):
+    """Risk-neutral probability the option finishes in the money: N(sign * d2)."""
+    spot, strike, expiry, rate, vol, div_yield = (
+        np.asarray(x, dtype=float) for x in (spot, strike, expiry, rate, vol, div_yield)
+    )
+    if option_type not in ("call", "put"):
+        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
+    if (
+        np.any(spot <= 0)
+        or np.any(strike <= 0)
+        or np.any(expiry <= 0)
+        or np.any(vol <= 0)
+    ):
+        raise ValueError("spot, strike, expiry and vol must all be positive")
+    sign = 1.0 if option_type == "call" else -1.0
+    _, d2 = _d1_d2(spot, strike, expiry, rate, vol, div_yield)
+    return norm.cdf(sign * d2)

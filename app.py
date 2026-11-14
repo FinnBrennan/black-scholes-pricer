@@ -1,431 +1,131 @@
+"""Streamlit front end for the Black-Scholes pricer. UI inspired by testfol.io."""
+
+import numpy as np
 import streamlit as st
-from pricer import black_scholes
 
-from charts import datapoints, options_vs_xaxis
-from heatmap import main_heatmap
+from bs_pricer import bs_price, prob_itm
+from charts import sensitivity_chart, sweep
+from heatmap import price_heatmap
 
-# Wide screen streamlit:
-st.set_page_config(layout="wide")
+st.set_page_config(page_title="Black-Scholes Options Pricer", layout="wide")
 
+# (key in params, input label, default, step, is_percent)
+INPUTS = [
+    ("spot", "Spot price ($)", 100.0, 1.0, False),
+    ("strike", "Strike price ($)", 100.0, 1.0, False),
+    ("expiry", "Time to expiry (years)", 1.0, 0.25, False),
+    ("rate", "Risk-free rate (%)", 5.0, 0.25, True),
+    ("vol", "Volatility (%)", 20.0, 1.0, True),
+    ("div_yield", "Dividend yield (%)", 0.0, 0.25, True),
+]
 
-# For persistent state
-if "calculated" not in st.session_state:
-    st.session_state.calculated = False
+# (key in params, chart axis label)
+SWEEPS = [
+    ("spot", "Spot price ($)"),
+    ("strike", "Strike price ($)"),
+    ("expiry", "Time to expiry (years)"),
+    ("rate", "Risk-free rate (decimal)"),
+    ("vol", "Volatility (decimal)"),
+    ("div_yield", "Dividend yield (decimal)"),
+]
 
+st.title("Black-Scholes Options Pricer")
+section = (
+    st.segmented_control(
+        "Section",
+        ["Pricer", "Heatmaps", "About"],
+        default="Pricer",
+        label_visibility="collapsed",
+    )
+    or "Pricer"
+)  # clicking the active button deselects it; fall back to Pricer
 
-# CSS
+# ---------------------------------------------------------------- Parameters
+with st.container(border=True):
+    st.subheader("Parameters")
+    params = {}
+    for col, (key, label, default, step, is_percent) in zip(
+        st.columns(len(INPUTS)), INPUTS
+    ):
+        value = col.number_input(label, value=default, step=step, format="%.2f")
+        params[key] = value / 100 if is_percent else value
 
-st.markdown(
-    """
-    <style>
-    .block-container {
-        padding-top: 1rem;
-    }
-    </style>
-""",
-    unsafe_allow_html=True,
-)
+    low, high = st.slider(
+        "Chart range (multiple of current value)", 0.1, 2.0, (0.75, 1.25), 0.05
+    )
 
-st.markdown(
-    """
-    <style>
-    [data-testid="stVerticalBlock"] > div:has(div.custom-block-green) {
-        background-color: #00B32c;
-        border-radius: 8px;
-        padding-left: 15px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
+try:
+    call = float(bs_price(**params, option_type="call"))
+    put = float(bs_price(**params, option_type="put"))
+except ValueError as err:
+    st.error(f"Invalid inputs: {err}")
+    st.stop()
 
-
-# CSS for put price display (Red box)
-st.markdown(
-    """
-    <style>
-    [data-testid="stVerticalBlock"] > div:has(div.custom-block-red) {
-        background-color: #B3000C;
-        border-radius: 8px;
-        padding-left: 15px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-
-st.title(" Black Scholes Pricer ")
-
-
-# =============================================================================
-#
-# Sidebar
-#
-# =============================================================================
-with st.sidebar:
-    # Take user inputs
-
-    # Toggle for percentage or decimal inputs: default = decimal.
-    use_percentage = st.toggle("Input as percentage", value=False)
-
-    curr_stk_prc = input_1 = st.number_input("Current Stock Price [ $ ]")
-    strike_pr = input_2 = st.number_input("Strike Price [ $ ]")
-    time_unt_exp = input_3 = st.number_input("Time Until Expiry [ years ]")
-    rsk_free_ir = input_4 = st.number_input("Risk Free Interest Rate [ 0.05 or 5% ]")
-    sigma_vol = input_5 = st.number_input("Volatility [ 0.05 or 5% ]")
-
-    # Take q as 0 for now - may update later.
-    q = 0
-    st.caption("Default q = 0  [dividend yield % per year ]")
-
-    # If user selects percentage inputs, convert value to decimal format.
-    rsk_free_ir = rsk_free_ir / 100 if use_percentage else rsk_free_ir
-    sigma_vol = sigma_vol / 100 if use_percentage else sigma_vol
-
-    st.markdown(
-        """
-        <style>
-        .stButton button {
-            margin: 0px;
+# ---------------------------------------------------------------- Pricer
+if section == "Pricer":
+    with st.container(border=True):
+        st.subheader("Results")
+        results = {
+            "Option": ["Call", "Put"],
+            "Price": [call, put],
+            "P(ITM)": [
+                float(prob_itm(**params, option_type="call")),
+                float(prob_itm(**params, option_type="put")),
+            ],
         }
-        </style>
-    """,
-        unsafe_allow_html=True,
-    )
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        calculate = st.button("Calculate Options Price", use_container_width=True)
-
-    with col2:
-        reset = st.button("Reset", use_container_width=True)
-
-    if reset:
-        st.session_state.calculated = False
-        st.rerun()
-
-
-# =============================================================================
-#
-# Call and Put Price Display
-#
-# =============================================================================
-
-if calculate:
-    st.session_state.calculated = True
-
-    # Validate Inputs:
-    errors = []
-
-    if curr_stk_prc <= 0:
-        errors.append("Stock price must be greater than 0")
-    if strike_pr <= 0:
-        errors.append("Strike price must be greater than 0")
-    if time_unt_exp <= 0:
-        errors.append("Time until expiry must be greater than 0")
-    if rsk_free_ir < 0:
-        errors.append("Risk free interest rate must be greater than 0")
-    if sigma_vol <= 0:
-        errors.append("Volatility must be greater than 0")
-
-    if errors:
-        for error in errors:
-            st.error(error)
-        st.stop()
-
-    # (call_p, put_p) = black_scholes(curr_stk_prc, strike_pr, time_unt_exp,
-    #               rsk_free_ir, sigma_vol)
-    prices = black_scholes(
-        curr_stk_prc, strike_pr, time_unt_exp, rsk_free_ir, sigma_vol
-    )
-    call_p = prices[0]
-    put_p = prices[1]
-
-    # Store in current state
-    st.session_state.call_p = call_p
-    st.session_state.put_p = put_p
-
-if st.session_state.calculated:
-    call_p = st.session_state.call_p
-    put_p = st.session_state.put_p
-
-    with st.sidebar:
-        with st.container():
-            st.markdown(
-                '<div class="custom-block-green"></div>', unsafe_allow_html=True
-            )
-            st.metric(label="Call Price", value=f"$ {call_p:.3f}")
-
-        with st.container():
-            st.markdown('<div class="custom-block-red"></div>', unsafe_allow_html=True)
-            st.metric(label="Put Price", value=f"$ {put_p:.3f}")
-
-    # =========================================================================
-    #
-    # Charts
-    #
-    # =========================================================================
-
-    # On calculate button - display graphs
-    st.divider()
-    st.markdown("**Option Price VS Single x-Variable Graphs**")
-    st.divider()
-
-    col1, col2 = st.columns([1, 5])
-
-    with col1:
-        low_multi = st.slider(
-            "Lower Bound",
-            min_value=0.1,
-            max_value=0.99,
-            value=0.75,
-            step=0.05,
-            help="e.g. 0.75 = 25% below current value",
+        st.dataframe(
+            results,
+            hide_index=True,
+            width="stretch",
+            column_config={
+                "Price": st.column_config.NumberColumn(format="%.4f"),
+                "P(ITM)": st.column_config.NumberColumn(format="percent"),
+            },
+        )
+        S, K, T = params["spot"], params["strike"], params["expiry"]
+        parity = S * np.exp(-params["div_yield"] * T) - K * np.exp(-params["rate"] * T)
+        st.caption(
+            f"Put-call parity: C − P = {call - put:.4f}, S·e⁻ᵠᵀ − K·e⁻ʳᵀ = {parity:.4f}"
         )
 
-        high_multi = st.slider(
-            "Upper Bound",
-            min_value=1.01,
-            max_value=2.0,
-            value=1.25,
-            step=0.05,
-            help="e.g. 1.25 = 25% above current value",
+    with st.container(border=True):
+        st.subheader("Sensitivity")
+        labels = dict(SWEEPS)
+        vary = st.selectbox("Vary", list(labels), format_func=labels.get)
+        n_points = 100
+
+        base = params[vary]
+        if base == 0:
+            # A multiple of zero is zero, so sweep a fixed range instead.
+            x_values = np.linspace(0.0, 0.10, n_points)
+        else:
+            x_values = sweep(base, low, high, n_points)
+
+        st.plotly_chart(
+            sensitivity_chart(params, vary, x_values, labels[vary]), width="stretch"
         )
 
-        user_datapoints = st.slider(
-            "# of Datapoints",
-            min_value=10,
-            max_value=200,
-            value=25,
-            step=5,
-            help="More points = smoother curves",
-        )
+# ---------------------------------------------------------------- Heatmaps
+elif section == "Heatmaps":
+    spots = sweep(params["spot"], low, high, 10)
+    vols = sweep(params["vol"], low, high, 10)
+    left, right = st.columns(2)
+    with left, st.container(border=True):
+        st.plotly_chart(price_heatmap(params, spots, vols, "call"), width="stretch")
+    with right, st.container(border=True):
+        st.plotly_chart(price_heatmap(params, spots, vols, "put"), width="stretch")
 
-    # Chart 1 (Call, Put vs Stock)
-    # =============================
-    x_datapoints, important_x = datapoints(
-        low_multi, high_multi, user_datapoints, curr_stk_prc
-    )
-
-    # call main function for C%P vs x_variable line graphs.
-    c_p_s_chart = options_vs_xaxis(
-        x_datapoints,
-        important_x,
-        low_multi,
-        curr_stk_prc,
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-        sigma_vol,
-        call_p,
-        put_p,
-        mode="stock",
-        x_label="Stock Price $",
-        title="Stock Price",
-    )
-
-    # Chart 2 (Call, Put vs Volatility)
-    # ==================================
-    x_datapoints, important_x = datapoints(
-        low_multi, high_multi, user_datapoints, sigma_vol
-    )
-
-    # call main function for C%P vs x_variable line graphs.
-    c_p_v_chart = options_vs_xaxis(
-        x_datapoints,
-        important_x,
-        low_multi,
-        curr_stk_prc,
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-        sigma_vol,
-        call_p,
-        put_p,
-        mode="vol",
-        x_label="Volatility [0.5 = 50%]",
-        title="Volatility",
-    )
-
-    # Chart 3 (Call, Put vs Strike)
-    # ==================================
-    x_datapoints, important_x = datapoints(
-        low_multi, high_multi, user_datapoints, strike_pr
-    )
-
-    # call main function for C%P vs x_variable line graphs.
-    c_p_strike_chart = options_vs_xaxis(
-        x_datapoints,
-        important_x,
-        low_multi,
-        curr_stk_prc,
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-        sigma_vol,
-        call_p,
-        put_p,
-        mode="strike",
-        x_label="Strike Price $",
-        title="Strike Price",
-    )
-
-    # Chart 4 (Call, Put vs Time)
-    # ==================================
-    x_datapoints, important_x = datapoints(
-        low_multi, high_multi, user_datapoints, time_unt_exp
-    )
-
-    # call main function for C%P vs x_variable line graphs.
-    c_p_t_chart = options_vs_xaxis(
-        x_datapoints,
-        important_x,
-        low_multi,
-        curr_stk_prc,
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-        sigma_vol,
-        call_p,
-        put_p,
-        mode="time",
-        x_label="Time Until Expiry [years]",
-        title="Time Until Expiry",
-    )
-
-    # Chart 5 (Call, Put vs Rate)
-    # ==================================
-    x_datapoints, important_x = datapoints(
-        low_multi, high_multi, user_datapoints, rsk_free_ir
-    )
-
-    # call main function for C%P vs x_variable line graphs.
-    c_p_r_chart = options_vs_xaxis(
-        x_datapoints,
-        important_x,
-        low_multi,
-        curr_stk_prc,
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-        sigma_vol,
-        call_p,
-        put_p,
-        mode="rate",
-        x_label="Risk Free Interest Rate [0.5 = 50%]",
-        title="Interest Rate",
-    )
-
-    with col2:
-        with st.expander("Stock Price"):
-            st.pyplot(c_p_s_chart)
-        with st.expander("Volatility"):
-            st.pyplot(c_p_v_chart)
-        with st.expander("Strike Price"):
-            st.pyplot(c_p_strike_chart)
-        with st.expander("Time Until Expiry"):
-            st.pyplot(c_p_t_chart)
-        with st.expander("Interest Rate"):
-            st.pyplot(c_p_r_chart)
-
-    # =============================================================================
-    #
-    # Heatmaps
-    #
-    # =============================================================================
-
-    st.divider()
-    st.markdown(
-        "**Heatmaps for Call and Put Prices (against Stock Price and Volatility**"
-    )
-    st.divider()
-
-    stock_price_datapoints, important_x = datapoints(
-        low_multi, high_multi, 10, curr_stk_prc
-    )
-    vol_datapoints, important_x = datapoints(low_multi, high_multi, 10, sigma_vol)
-
-    call_heatmap = main_heatmap(
-        stock_price_datapoints,
-        vol_datapoints,
-        "call",
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-    )
-
-    put_heatmap = main_heatmap(
-        stock_price_datapoints,
-        vol_datapoints,
-        "put",
-        strike_pr,
-        time_unt_exp,
-        rsk_free_ir,
-    )
-
-    col1, col2 = st.columns(2)
-    with col1, st.expander("Call Heatmap"):
-        st.pyplot(call_heatmap)
-    with col2, st.expander("Put Heatmap"):
-        st.pyplot(put_heatmap)
-
-
-# =============================================================================
-#
-# Default Display
-#
-# =============================================================================
-
-
-# Default display
+# ---------------------------------------------------------------- About
 else:
-    with st.sidebar:
-        with st.container():
-            st.markdown(
-                '<div class="custom-block-green"></div>', unsafe_allow_html=True
-            )
-            st.metric(label="Call Price", value="$")
+    with st.container(border=True):
+        st.subheader("About")
+        st.markdown("""
+Prices European options with the Black-Scholes model, including a continuous dividend yield.
 
-        with st.container():
-            st.markdown('<div class="custom-block-red"></div>', unsafe_allow_html=True)
-            st.metric(label="Put Price", value="$")
+**Assumptions:** constant volatility and interest rate, lognormal stock prices,
+no transaction costs, exercise only at expiry.
 
-    st.subheader("Enter 5 valid inputs to calculate options price")
+**Source and tests:** [github.com/FinnBrennan/black-scholes-pricer](https://github.com/FinnBrennan/black-scholes-pricer)
+""")
 
-
-# =============================================================================
-# hello
-# Progress Tracking
-#
-# =============================================================================
-
-
-# V1= python terminal
-# - Done
-# =============================
-
-
-# V2 = Streamlit for frontend + 2 graphs
-# -mvp complete
-# -colour scheme implemented
-# -both options prices to x_variable graphs implemented
-# =============================
-
-
-# V3 = Complete all 5 single variable graphs + Sliders.
-# - Completed
-
-# V4 = Persistant State for live graph updates after bound adjustments.
-# - Also:
-# - Error handling and input validation
-# - Bounds now sliders not number input boxes.
-# - Slight styling changes
-
-
-# streaV5  = Percentage toggle for inputs
-
-
-# To Come:
-
-# React front end.
+st.caption("UI inspired by [testfol.io](https://testfol.io). Educational use only.")
