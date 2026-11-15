@@ -4,8 +4,26 @@ import numpy as np
 from scipy.stats import norm
 
 
+def _prepare(spot, strike, expiry, rate, vol, div_yield, option_type):
+    """Convert inputs to float arrays, validate them, and return the call/put sign."""
+    spot, strike, expiry, rate, vol, div_yield = (
+        np.asarray(x, dtype=float) for x in (spot, strike, expiry, rate, vol, div_yield)
+    )
+    if option_type not in ("call", "put"):
+        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
+    if (
+        np.any(spot <= 0)
+        or np.any(strike <= 0)
+        or np.any(expiry <= 0)
+        or np.any(vol <= 0)
+    ):
+        raise ValueError("spot, strike, expiry and vol must all be positive")
+    sign = 1.0 if option_type == "call" else -1.0
+    return spot, strike, expiry, rate, vol, div_yield, sign
+
+
 def _d1_d2(spot, strike, expiry, rate, vol, div_yield):
-    """Black-Scholes formula d1 and d2 term calcuations."""
+    """Black-Scholes formula d1 and d2 term calculations."""
     vol_sqrt_t = vol * np.sqrt(expiry)
     d1 = (
         np.log(spot / strike) + (rate - div_yield + 0.5 * vol**2) * expiry
@@ -29,47 +47,26 @@ def bs_price(spot, strike, expiry, rate, vol, div_yield=0.0, option_type="call")
     option_type : "call" or "put"
 
     All numeric inputs can accept scalars or NumPy arrays
-    (Inputs are now broadcast together).
+    (Inputs are broadcast together).
 
-    price = phi · [S·e^(-qT)·N(phi·d1) - K·e^(-rT)·N(phi·d2)],  phi = +1 call, -1 put
+    price = sign · [S·e^(-qT)·N(sign·d1) - K·e^(-rT)·N(sign·d2)],  sign = +1 call, -1 put
     """
-    spot, strike, expiry, rate, vol, div_yield = (
-        np.asarray(x, dtype=float) for x in (spot, strike, expiry, rate, vol, div_yield)
+    spot, strike, expiry, rate, vol, div_yield, sign = _prepare(
+        spot, strike, expiry, rate, vol, div_yield, option_type
     )
-
-    if option_type not in ("call", "put"):
-        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
-    if (
-        np.any(spot <= 0)
-        or np.any(strike <= 0)
-        or np.any(expiry <= 0)
-        or np.any(vol <= 0)
-    ):
-        raise ValueError("spot, strike, expiry and vol must all be positive")
-
-    phi = 1.0 if option_type == "call" else -1.0
     d1, d2 = _d1_d2(spot, strike, expiry, rate, vol, div_yield)
 
-    return phi * (
-        spot * np.exp(-div_yield * expiry) * norm.cdf(phi * d1)
-        - strike * np.exp(-rate * expiry) * norm.cdf(phi * d2)
+    return sign * (
+        spot * np.exp(-div_yield * expiry) * norm.cdf(sign * d1)
+        - strike * np.exp(-rate * expiry) * norm.cdf(sign * d2)
     )
 
 
 def prob_itm(spot, strike, expiry, rate, vol, div_yield=0.0, option_type="call"):
     """Risk-neutral probability the option finishes in the money: N(sign * d2)."""
-    spot, strike, expiry, rate, vol, div_yield = (
-        np.asarray(x, dtype=float) for x in (spot, strike, expiry, rate, vol, div_yield)
+    spot, strike, expiry, rate, vol, div_yield, sign = _prepare(
+        spot, strike, expiry, rate, vol, div_yield, option_type
     )
-    if option_type not in ("call", "put"):
-        raise ValueError(f"option_type must be 'call' or 'put', got {option_type!r}")
-    if (
-        np.any(spot <= 0)
-        or np.any(strike <= 0)
-        or np.any(expiry <= 0)
-        or np.any(vol <= 0)
-    ):
-        raise ValueError("spot, strike, expiry and vol must all be positive")
-    sign = 1.0 if option_type == "call" else -1.0
+
     _, d2 = _d1_d2(spot, strike, expiry, rate, vol, div_yield)
     return norm.cdf(sign * d2)

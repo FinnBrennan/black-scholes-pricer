@@ -3,7 +3,7 @@
 import numpy as np
 import streamlit as st
 
-from bs_pricer import bs_price, prob_itm
+from bs_pricer import bs_price, prob_itm, bs_greeks
 from charts import sensitivity_chart, sweep
 from heatmap import price_heatmap
 
@@ -40,7 +40,8 @@ section = (
     or "Pricer"
 )  # clicking the active button deselects it; fall back to Pricer
 
-# ---------------------------------------------------------------- Parameters
+# Parameters
+# ----------------------------------------------------------------
 with st.container(border=True):
     st.subheader("Parameters")
     params = {}
@@ -61,31 +62,43 @@ except ValueError as err:
     st.error(f"Invalid inputs: {err}")
     st.stop()
 
-# ---------------------------------------------------------------- Pricer
+# Pricer
+# ----------------------------------------------------------------
 if section == "Pricer":
     with st.container(border=True):
         st.subheader("Results")
-        results = {
-            "Option": ["Call", "Put"],
-            "Price": [call, put],
-            "P(ITM)": [
-                float(prob_itm(**params, option_type="call")),
-                float(prob_itm(**params, option_type="put")),
-            ],
-        }
+        rows = []
+        for option_type, price in [("call", call), ("put", put)]:
+            greeks = bs_greeks(**params, option_type=option_type)
+            rows.append(
+                {
+                    "Option": option_type.title(),
+                    "Price": price,
+                    "Delta": float(greeks["delta"]),
+                    "Gamma": float(greeks["gamma"]),
+                    "Vega (1%)": float(greeks["vega"]),
+                    "Theta (day)": float(greeks["theta"]),
+                    "Rho (1%)": float(greeks["rho"]),
+                    "P(ITM)": float(prob_itm(**params, option_type=option_type)),
+                }
+            )
         st.dataframe(
-            results,
+            rows,
             hide_index=True,
             width="stretch",
             column_config={
-                "Price": st.column_config.NumberColumn(format="%.4f"),
-                "P(ITM)": st.column_config.NumberColumn(format="percent"),
-            },
+                col: st.column_config.NumberColumn(format="%.4f")
+                for col in rows[0]
+                if col not in ("Option", "P(ITM)")
+            }
+            | {"P(ITM)": st.column_config.NumberColumn(format="percent")},
         )
+
         S, K, T = params["spot"], params["strike"], params["expiry"]
         parity = S * np.exp(-params["div_yield"] * T) - K * np.exp(-params["rate"] * T)
         st.caption(
-            f"Put-call parity: C − P = {call - put:.4f}, S·e⁻ᵠᵀ − K·e⁻ʳᵀ = {parity:.4f}"
+            f"Put-call parity: $C - P = {call - put:.4f}$, "
+            f"$Se^{{-qT}} - Ke^{{-rT}} = {parity:.4f}$"
         )
 
     with st.container(border=True):
@@ -105,7 +118,9 @@ if section == "Pricer":
             sensitivity_chart(params, vary, x_values, labels[vary]), width="stretch"
         )
 
-# ---------------------------------------------------------------- Heatmaps
+
+# Heatmaps
+# ----------------------------------------------------------------
 elif section == "Heatmaps":
     spots = sweep(params["spot"], low, high, 10)
     vols = sweep(params["vol"], low, high, 10)
@@ -115,7 +130,9 @@ elif section == "Heatmaps":
     with right, st.container(border=True):
         st.plotly_chart(price_heatmap(params, spots, vols, "put"), width="stretch")
 
-# ---------------------------------------------------------------- About
+
+# About
+# ----------------------------------------------------------------
 else:
     with st.container(border=True):
         st.subheader("About")
@@ -127,5 +144,3 @@ no transaction costs, exercise only at expiry.
 
 **Source and tests:** [github.com/FinnBrennan/black-scholes-pricer](https://github.com/FinnBrennan/black-scholes-pricer)
 """)
-
-st.caption("UI inspired by [testfol.io](https://testfol.io). Educational use only.")

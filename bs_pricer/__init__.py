@@ -1,9 +1,6 @@
 """Black-Scholes options pricing engine."""
 
-from .pricer import bs_price
-
-__all__ = ["bs_price"]
-
+from .greeks import bs_greeks
 from .pricer import bs_price, prob_itm
 
-__all__ = ["bs_price", "prob_itm"]
+__all__ = ["bs_greeks", "bs_price", "prob_itm"]
