@@ -3,7 +3,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from bs_pricer import bs_price
+from bs_pricer import bs_price, bs_greeks
 
 CALL_COLOUR = "#00B32C"
 PUT_COLOUR = "#B3000C"
@@ -48,5 +48,35 @@ def sensitivity_chart(params, vary, x_values, label):
         xaxis_title=label,
         yaxis_title="Option price ($)",
         hovermode="x unified",
+    )
+    return fig
+
+
+GREEK_LABELS = {
+    "delta": "Delta",
+    "gamma": "Gamma",
+    "vega": "Vega (per 1% vol)",
+    "theta": "Theta (per day)",
+    "rho": "Rho (per 1% rate)",
+}
+
+
+def greek_chart(params, greek, spots):
+    """Call and put value of one Greek as spot varies, all other inputs held fixed."""
+    swept = {**params, "spot": spots}
+    calls = bs_greeks(**swept, option_type="call")[greek]
+    puts = bs_greeks(**swept, option_type="put")[greek]
+
+    fig = go.Figure()
+    fig.add_scatter(x=spots, y=calls, name="Call", line={"color": CALL_COLOUR})
+    fig.add_scatter(x=spots, y=puts, name="Put", line={"color": PUT_COLOUR})
+    fig.add_vline(x=params["spot"], line_dash="dash", line_color="grey")
+    fig.update_layout(
+        title=GREEK_LABELS[greek],
+        xaxis_title="Spot price ($)",
+        hovermode="x unified",
+        height=320,
+        margin={"t": 50, "b": 40, "l": 50, "r": 20},
+        legend={"orientation": "h", "y": 1.12, "x": 1, "xanchor": "right"},
     )
     return fig

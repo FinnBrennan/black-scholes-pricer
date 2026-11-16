@@ -4,7 +4,7 @@ import numpy as np
 import streamlit as st
 
 from bs_pricer import bs_price, prob_itm, bs_greeks
-from charts import sensitivity_chart, sweep
+from charts import sensitivity_chart, sweep, GREEK_LABELS, greek_chart
 from heatmap import price_heatmap
 
 st.set_page_config(page_title="Black-Scholes Options Pricer", layout="wide")
@@ -33,7 +33,7 @@ st.title("Black-Scholes Options Pricer")
 section = (
     st.segmented_control(
         "Section",
-        ["Pricer", "Heatmaps", "About"],
+        ["Pricer", "Greeks", "Heatmaps", "About"],
         default="Pricer",
         label_visibility="collapsed",
     )
@@ -117,6 +117,19 @@ if section == "Pricer":
         st.plotly_chart(
             sensitivity_chart(params, vary, x_values, labels[vary]), width="stretch"
         )
+
+
+# Greeks
+# ----------------------------------------------------------------
+elif section == "Greeks":
+    st.caption(
+        "Each Greek as spot varies, all other inputs fixed. Dashed line marks current spot."
+    )
+    spots = sweep(params["spot"], low, high, 100)
+    cols = st.columns(2)
+    for i, greek in enumerate(GREEK_LABELS):
+        with cols[i % 2], st.container(border=True):
+            st.plotly_chart(greek_chart(params, greek, spots), width="stretch")
 
 
 # Heatmaps
