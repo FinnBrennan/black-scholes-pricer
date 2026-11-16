@@ -72,6 +72,14 @@ them.
 
 ## Use as a library
 
+Install from PyPI:
+
+```bash
+pip install finn-bs-pricer
+```
+
+Then:
+
 ```python
 from bs_pricer import bs_greeks, bs_price, implied_vol
 
@@ -83,6 +91,8 @@ implied_vol(10.4506, 100, 100, 1, 0.05)                # 0.2000
 import numpy as np
 bs_price(np.array([90, 100, 110]), 100, 1, 0.05, np.array([[0.1], [0.2]]))
 ```
+
+The package installs as `finn-bs-pricer` and imports as `bs_pricer`.
 
 ## Run locally
 

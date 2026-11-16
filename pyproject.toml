@@ -1,3 +1,25 @@
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[project]
+name = "finn-bs-pricer"
+version = "2.0.0"
+description = "Vectorised Black-Scholes pricing, Greeks and implied volatility"
+readme = "README.md"
+license = "MIT"
+authors = [{ name = "Finn Brennan" }]
+requires-python = ">=3.11"
+dependencies = ["numpy", "scipy"]
+
+[project.urls]
+Homepage = "https://github.com/FinnBrennan/black-scholes-pricer"
+Demo = "https://black-scholes-pricer-finn.streamlit.app"
+
+
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["bs_pricer"]
