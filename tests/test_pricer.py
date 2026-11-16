@@ -4,7 +4,7 @@ import pytest
 from bs_pricer import bs_price
 
 # Reference case: S=100, K=100, T=1, r=5%, sigma=20% (Hull textbook example)
-ATM = dict(spot=100, strike=100, expiry=1, rate=0.05, vol=0.2)
+ATM = {"spot": 100, "strike": 100, "expiry": 1, "rate": 0.05, "vol": 0.2}
 
 
 def test_atm_call_reference():
@@ -53,12 +53,12 @@ def test_call_increases_with_spot():
 @pytest.mark.parametrize(
     "bad",
     [
-        dict(spot=0),
-        dict(spot=-1),
-        dict(strike=0),
-        dict(expiry=0),
-        dict(vol=0),
-        dict(vol=-0.2),
+        {"spot": 0},
+        {"spot": -1},
+        {"strike": 0},
+        {"expiry": 0},
+        {"vol": 0},
+        {"vol": -0.2},
     ],
 )
 def test_invalid_inputs_raise(bad):

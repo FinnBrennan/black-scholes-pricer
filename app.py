@@ -3,8 +3,8 @@
 import numpy as np
 import streamlit as st
 
-from bs_pricer import bs_price, prob_itm, implied_vol, bs_greeks
-from charts import sensitivity_chart, sweep, GREEK_LABELS, greek_chart
+from bs_pricer import bs_greeks, bs_price, implied_vol, prob_itm
+from charts import GREEK_LABELS, greek_chart, sensitivity_chart, sweep
 from heatmap import price_heatmap
 
 st.set_page_config(page_title="Black-Scholes Options Pricer", layout="wide")

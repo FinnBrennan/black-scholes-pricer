@@ -3,7 +3,7 @@
 import numpy as np
 import plotly.graph_objects as go
 
-from bs_pricer import bs_price, bs_greeks
+from bs_pricer import bs_greeks, bs_price
 
 CALL_COLOUR = "#00B32C"
 PUT_COLOUR = "#B3000C"
