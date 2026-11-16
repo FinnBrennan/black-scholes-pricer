@@ -3,7 +3,7 @@
 import numpy as np
 import streamlit as st
 
-from bs_pricer import bs_price, prob_itm, bs_greeks
+from bs_pricer import bs_price, prob_itm, implied_vol, bs_greeks
 from charts import sensitivity_chart, sweep, GREEK_LABELS, greek_chart
 from heatmap import price_heatmap
 
@@ -33,7 +33,7 @@ st.title("Black-Scholes Options Pricer")
 section = (
     st.segmented_control(
         "Section",
-        ["Pricer", "Greeks", "Heatmaps", "About"],
+        ["Pricer", "Greeks", "Implied vol", "Heatmaps", "About"],
         default="Pricer",
         label_visibility="collapsed",
     )
@@ -132,6 +132,33 @@ elif section == "Greeks":
             st.plotly_chart(greek_chart(params, greek, spots), width="stretch")
 
 
+# Implied vol
+# ----------------------------------------------------------------
+elif section == "Implied vol":
+    with st.container(border=True):
+        st.subheader("Implied volatility")
+        st.caption(
+            "Enter a market price to find the volatility the market is implying. "
+            "Uses every input above except volatility."
+        )
+        left, right = st.columns(2)
+        iv_type = left.radio("Option", ["Call", "Put"], horizontal=True)
+        model_price = call if iv_type == "Call" else put
+        market_price = right.number_input(
+            "Market price ($)",
+            value=round(model_price, 2),
+            step=0.10,
+            format="%.2f",
+            key=f"market_price_{iv_type}",
+        )
+        iv_args = {k: v for k, v in params.items() if k != "vol"}
+        try:
+            iv = implied_vol(market_price, **iv_args, option_type=iv_type.lower())
+            st.metric("Implied volatility", f"{iv:.2%}")
+        except (ValueError, RuntimeError) as err:
+            st.warning(str(err))
+
+
 # Heatmaps
 # ----------------------------------------------------------------
 elif section == "Heatmaps":
@@ -152,8 +179,11 @@ else:
         st.markdown("""
 Prices European options with the Black-Scholes model, including a continuous dividend yield.
 
+**Features:** call and put prices, all five Greeks, implied volatility from a market price,
+sensitivity charts and price heatmaps.
+
 **Assumptions:** constant volatility and interest rate, lognormal stock prices,
 no transaction costs, exercise only at expiry.
 
-**Source and tests:** [github.com/FinnBrennan/black-scholes-pricer](https://github.com/FinnBrennan/black-scholes-pricer)
+**Built by Finn Brennan** · [Source and tests on GitHub](https://github.com/FinnBrennan/black-scholes-pricer)
 """)

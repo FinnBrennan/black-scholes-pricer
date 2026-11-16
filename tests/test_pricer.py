@@ -69,3 +69,11 @@ def test_invalid_inputs_raise(bad):
 def test_invalid_option_type_raises():
     with pytest.raises(ValueError):
         bs_price(**ATM, option_type="straddle")
+
+
+def test_prob_itm_call_and_put_sum_to_one():
+    from bs_pricer import prob_itm
+
+    call = prob_itm(**ATM, option_type="call")
+    put = prob_itm(**ATM, option_type="put")
+    assert call + put == pytest.approx(1.0)
