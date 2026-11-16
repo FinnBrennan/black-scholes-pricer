@@ -1,10 +1,14 @@
 # Black-Scholes Options Pricer
 
+[![PyPI](https://img.shields.io/pypi/v/finn-bs-pricer)](https://pypi.org/project/finn-bs-pricer/)
+[![Python](https://img.shields.io/pypi/pyversions/finn-bs-pricer)](https://pypi.org/project/finn-bs-pricer/)
+[![License: MIT](https://img.shields.io/github/license/FinnBrennan/black-scholes-pricer)](LICENSE)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://black-scholes-pricer-finn.streamlit.app)
+
 Prices European call and put options with the Black-Scholes model, computes all
 five Greeks, and solves for implied volatility. A vectorised NumPy pricing
 engine with a Streamlit front end.
 
-**[Live demo →](https://black-scholes-pricer-finn.streamlit.app)**
 
 ![App screenshot](docs/screenshot.png)
 
